@@ -1,0 +1,53 @@
+%getHostname% uname -n
+host2
+%getDatastores% df -h | grep 'VMFS' | awk '{print $2,$4,$6}'
+465.5G 248.5G /vmfs/volumes/Disk1
+465.5G 258.2G /vmfs/volumes/Disk4
+465.5G 272.3G /vmfs/volumes/Disk2
+465.5G 299.8G /vmfs/volumes/Disk3
+%getTotalmem% esxcli hardware memory get|grep Physical|sed 's/Bytes//'|cut -d':' -f2
+ 16859910144
+%getActiveVMs% ps | grep vmx-svga | awk '{print $3}'|cut -d':' -f2
+RDM14085
+DeepSec04072
+Gitlab
+CentOS5
+mineubuntu
+RDM4185-LA
+%getAllVMs% vim-cmd vmsvc/getallvms | sed '1d' | awk '{if ($1 > 0) print $1,$2}'
+10 VM04033
+103 mineubuntu
+118 CentOS5
+120 RDM14085
+13 W2008R2
+137 DeepSec04072
+138 Gitlab
+16 OVPN009
+89 RDM4185-LAB
+91 SEP14test
+92 A-BR-04-176
+93 A-BR-04-177
+94 A-BR-04-178
+%getVMIDFromVMName% vim-cmd vmsvc/getallvms | sed '1d' | awk '{if ($2 == \"%s\") print $1}'
+103
+%getVMNameFromVMID% vim-cmd vmsvc/getallvms | sed '1d' | awk '{if ($1 == \"%s\") print $2}'
+testvm
+%getDisplayName% grep displayName %s/%s.vmx | awk '{print $3}' | sed s/\"//g
+testvm
+%destroyVM% ls %s/%s/%s.vmx > /dev/null && vim-cmd /vmsvc/destroy %s; echo $?
+0
+%getPortgroupNames% esxcli network vswitch standard list | grep -i portgroups | cut -d':' -f2
+ 192.168.4.0, Management Network
+ 192.168.46.0
+ Fake
+%getVMwareVersion% vmware -v | awk '{print $3}'
+5.5.0
+%getAllocatedMem% for i in %s;do vim-cmd vmsvc/get.summary $i|grep memorySizeMB|awk -F'=' '{print $2}'|sed 's/,//g'
+ 4096 
+ 8000 
+ 4096 
+ 4096 
+ 2048 
+ 1024 
+ 3968
+ 
