@@ -204,7 +204,7 @@ func (p *Pool) clearVMsTable() error {
 	return nil
 }
 
-func (p *Pool) getMostVacantHost(memSize, dsSize int) (string, int, error) {
+func (p *Pool) getMostVacantHost(memSize, dsSize int, portgroup string) (string, int, error) {
 	hosts := p.Hosts
 	maxVMAvailableCnt := 0
 	maxVMAvailableHost := ""
@@ -214,6 +214,18 @@ func (p *Pool) getMostVacantHost(memSize, dsSize int) (string, int, error) {
 			continue
 		}
 		h := hosts[ip]
+		if portgroup != "" {
+			hasPG := false
+			for pg := range h.portGroups {
+				if pg == portgroup {
+					hasPG = true
+				}
+			}
+			if hasPG == false {
+				continue
+			}
+		}
+
 		_, _, dsAvailSize, err := p.getMostVacantStorage(ip)
 		if err != nil {
 			return "", -1, err
@@ -297,13 +309,13 @@ func (p *Pool) getDsAvailSize(hostIP string, dsPath string) (int, error) {
 }
 
 func (p *Pool) appendVMResource(hostIP string,
-	dsSize int, memSize int, ds string) (string, string, error) {
+	dsSize int, memSize int, ds, portgroup string) (string, string, error) {
 	var err error
 	vmAvailCnt := 0
 	dsAvailSize := 0
 
 	if hostIP == "" {
-		hostIP, vmAvailCnt, err = p.getMostVacantHost(memSize, dsSize)
+		hostIP, vmAvailCnt, err = p.getMostVacantHost(memSize, dsSize, portgroup)
 		if err != nil {
 			return "", "", err
 		}

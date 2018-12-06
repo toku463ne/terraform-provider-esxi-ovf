@@ -109,7 +109,7 @@ func DestroyVM(id, password string) error {
 	if err := h.destroyVM(vmid, vmname, vmdir); err != nil {
 		return err
 	}
-	if err := deleteVMDB(poolid, vmid, vmname, hostIP); err != nil {
+	if err := deleteVMDB(poolid, vmname); err != nil {
 		return err
 	}
 	_, ovfpath := getWorkOvfPath(vmname, "")
@@ -121,7 +121,7 @@ func DestroyVM(id, password string) error {
 	return nil
 }
 
-func deleteVMDB(poolID, vmid, vmname, hostIP string) error {
+func deleteVMDB(poolID, vmname string) error {
 	dbw, err := openDb(poolID, vmDbName)
 	if err != nil {
 		return err
@@ -129,8 +129,8 @@ func deleteVMDB(poolID, vmid, vmname, hostIP string) error {
 	defer dbw.closeDb()
 
 	sql := fmt.Sprintf(`DELETE FROM VMS 
-			WHERE HOST_IP="%s" AND VMID="%s" AND NAME="%s";`,
-		hostIP, vmid, vmname)
+			WHERE  NAME="%s";`,
+		vmname)
 	err = dbw.updateDbWithRetry(sql)
 	if err != nil {
 		return err
@@ -230,7 +230,11 @@ func (vm *VM) reserveVMResource() error {
 		hostIP2 := ""
 		ds2 := ""
 		rows.Scan(&seq2, &name, &hostIP2, &dsSize, &memSize, &ds2)
-		hostIP, ds, err = p.appendVMResource(hostIP2, dsSize, memSize, ds2)
+		portgroup := ""
+		if len(vm.portgroups) > 0 {
+			portgroup = vm.portgroups[0]
+		}
+		hostIP, ds, err = p.appendVMResource(hostIP2, dsSize, memSize, ds2, portgroup)
 		if err != nil {
 			continue
 		}
@@ -395,6 +399,7 @@ func DeployVM(poolid, name, password, ovfpath string,
 		return "", err
 	}
 	if err := vm.reserveVMResource(); err != nil {
+		deleteVMDB(poolid, vm.name)
 		return "", err
 	}
 	h, err := loadHost(poolid, vm.hostIP, vm.password)

@@ -278,7 +278,7 @@ func TestPool_getMostVacantHost(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := createTestPool("TestPool_getMostVacantHost", tt.f.n, false, "dummy")
 
-			got, got1, err := p.getMostVacantHost(tt.args.memSize, tt.args.dsSize)
+			got, got1, err := p.getMostVacantHost(tt.args.memSize, tt.args.dsSize, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Pool.getMostVacantHost() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -378,7 +378,8 @@ func TestPool_appendVMResource(t *testing.T) {
 				Hosts:   tt.fields.Hosts,
 				hostIPs: tt.fields.hostIPs,
 			}
-			got, got1, err := p.appendVMResource(tt.args.hostIP, tt.args.dsSize, tt.args.memSize, tt.args.ds)
+			got, got1, err := p.appendVMResource(tt.args.hostIP,
+				tt.args.dsSize, tt.args.memSize, tt.args.ds, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Pool.appendVMResource() error = %v, wantErr %v", err, tt.wantErr)
 				return

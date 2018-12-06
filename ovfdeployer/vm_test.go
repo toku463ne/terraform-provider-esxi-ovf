@@ -25,7 +25,7 @@ func TestVm_ReserveVMResource(t *testing.T) {
 		t.Errorf("%+v", err)
 	}
 	poolid := "vmtest"
-	p := createTestPool(poolid, 4, true, "")
+	p := createTestPool(poolid, 4, true, "dummy")
 	if p == nil {
 		t.Fatal("Could not create pool")
 	}
@@ -135,7 +135,20 @@ func TestVm_ReserveVMResource(t *testing.T) {
 		hostIP:     "",
 		datastore:  "",
 		portgroups: []string{"1.2.3.0"},
-		guestinfos: []string{"guestinfo.test6"},
+		guestinfos: []string{"guestinfo.test7"},
+		pool:       *p,
+	}
+	vm8 := fields{
+		poolid:     poolid,
+		name:       "testvm8",
+		ovfpath:    "",
+		dsSize:     3000,
+		memSize:    500,
+		cpuCores:   1,
+		hostIP:     "",
+		datastore:  "",
+		portgroups: []string{"1.2.3.1"},
+		guestinfos: []string{"guestinfo.test8"},
 		pool:       *p,
 	}
 	tests := []struct {
@@ -152,6 +165,7 @@ func TestVm_ReserveVMResource(t *testing.T) {
 		{"vm5", vm5, map[string]string{"hostIP": "1.2.3.1", "ds": "Disk1"}, false},
 		{"vm6", vm6, map[string]string{"hostIP": "1.2.3.2", "ds": "Disk4"}, false},
 		{"vm7", vm7, map[string]string{"hostIP": "", "ds": ""}, true},
+		{"vm8", vm8, map[string]string{"hostIP": "", "ds": ""}, true},
 	}
 	for _, tt := range tests {
 		vm, err := NewVM(poolid,
@@ -163,10 +177,12 @@ func TestVm_ReserveVMResource(t *testing.T) {
 			tt.fields.datastore,
 			tt.fields.portgroups,
 			tt.fields.guestinfos)
-		vm.dsSize = tt.fields.dsSize
 		if err != nil {
 			t.Errorf("%+v", err)
+			return
 		}
+		vm.dsSize = tt.fields.dsSize
+
 		if err := vm.reserveVMResource(); (err != nil) != tt.wantErr {
 			t.Errorf("%s Vm.ReserveVMResource() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 		}
@@ -212,6 +228,8 @@ func TestDeployVM(t *testing.T) {
 		// TODO: Add test cases.
 		{"test1", args{"testvm", "test1.ovf", 4096, 4, "", ""},
 			"1.2.3.4", "Disk1", 32768, false},
+		{"test2", args{"testvm", "test1.ovf", 10000, 4, "", ""},
+			"1.2.3.4", "Disk1", 32768, true},
 	}
 	for _, tt := range tests {
 		ovfpath := fmt.Sprintf("%s/ovf/%s", getTestDir(), tt.args.ovfname)
@@ -223,6 +241,9 @@ func TestDeployVM(t *testing.T) {
 			[]string{"guestinfo.test"})
 		if (err != nil) != tt.wantErr {
 			t.Errorf("DeployVM() error = %v, wantErr %v", err, tt.wantErr)
+			return
+		}
+		if err != nil {
 			return
 		}
 		if got == "" {
