@@ -61,6 +61,16 @@ func resourceVM() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"power_on_vm": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+			"log_level": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "info",
+			},
 		},
 	}
 }
@@ -80,9 +90,15 @@ func resourceVMCreate(d *schema.ResourceData, m interface{}) error {
 	cpuCores := d.Get("cpu_cores").(int)
 	portgroups := interface2StrSlice(d.Get("portgroups").([]interface{}))
 	guestinfos := interface2StrSlice(d.Get("guestinfos").([]interface{}))
+	logLevel := d.Get("log_level").(string)
+	powerONVM := d.Get("power_on_vm").(bool)
+
+	if err := odp.Init(poolid, "vm", logLevel); err != nil {
+		return err
+	}
 
 	id, err := odp.DeployVM(poolid, name, password, ovfpath, memSize, cpuCores,
-		hostIP, datastore, portgroups, guestinfos)
+		hostIP, datastore, portgroups, guestinfos, powerONVM)
 	if err != nil {
 		return err
 	}
@@ -92,7 +108,13 @@ func resourceVMCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceVMRead(d *schema.ResourceData, m interface{}) error {
 	id := d.Id()
+	poolid := d.Get("poolid").(string)
 	password := d.Get("password").(string)
+	logLevel := d.Get("log_level").(string)
+
+	if err := odp.Init(poolid, "vm", logLevel); err != nil {
+		return err
+	}
 	if err := odp.CheckVMID(id, password); err != nil {
 		return err
 	}
@@ -104,7 +126,13 @@ func resourceVMUpdate(d *schema.ResourceData, m interface{}) error {
 }
 func resourceVMDelete(d *schema.ResourceData, m interface{}) error {
 	id := d.Id()
+	poolid := d.Get("poolid").(string)
 	password := d.Get("password").(string)
+	logLevel := d.Get("log_level").(string)
+
+	if err := odp.Init(poolid, "vm", logLevel); err != nil {
+		return err
+	}
 	err := odp.DestroyVM(id, password)
 	return err
 }

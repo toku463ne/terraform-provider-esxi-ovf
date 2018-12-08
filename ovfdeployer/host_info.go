@@ -46,6 +46,19 @@ func (h *host) getTotalMem() error {
 	return nil
 }
 
+func (h *host) getCPUCores() error {
+	cmd := "esxcli hardware cpu list | grep CPU: | wc -l"
+	res, err := h.sshExp.run(cmdGetCPUCores, cmd)
+	if err != nil {
+		return err
+	}
+	h.cpuCoresCnt, err = strconv.Atoi(removeBlanks(res[0]))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 /***************************
   Get VM info on ESXi host
   Tested with ESXi5.5, 6
@@ -111,6 +124,7 @@ func (h *host) getVMInfo() error {
   Tested with ESXi5.5, 6
 ****************************/
 func (h *host) getVMId(vmname string) (string, error) {
+	logDebug("getVMId(%s)", vmname)
 	vmid := ""
 	res, err := h.sshExp.run(cmdGetVMIDFromVMName, "vim-cmd vmsvc/getallvms | sed '1d' | awk '{if ($2 == \"%s\") print $1}'", vmname)
 	if err != nil {

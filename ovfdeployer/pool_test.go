@@ -249,8 +249,9 @@ func TestPool_getMostVacantHost(t *testing.T) {
 	}
 
 	type args struct {
-		memSize int
-		dsSize  int
+		memSize  int
+		dsSize   int
+		cpuCores int
 	}
 	type fields struct {
 		n int
@@ -264,21 +265,22 @@ func TestPool_getMostVacantHost(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"1 host: ok", args{2000, 30000}, fields{1}, "1.2.3.1", 4, false},
-		{"1 host: ng", args{4000, 30000}, fields{1}, "", -1, true},
-		{"1 host: ng2", args{2000, 60000}, fields{1}, "", -1, true},
-		{"2 hosts: ok", args{2000, 30000}, fields{2}, "1.2.3.2", 6, false},
-		{"2 hosts: ng", args{6000, 30000}, fields{2}, "", -1, true},
-		{"2 hosts: ng2", args{2000, 60000}, fields{2}, "", -1, true},
-		{"3 hosts: ok", args{2000, 30000}, fields{3}, "1.2.3.3", 8, false},
-		{"3 hosts: ng", args{9000, 30000}, fields{3}, "", -1, true},
-		{"3 hosts: ng2", args{2000, 60000}, fields{3}, "", -1, true},
+		{"1 host: ok", args{2000, 30000, 2}, fields{1}, "1.2.3.1", 4, false},
+		{"1 host: ng", args{4000, 30000, 2}, fields{1}, "", -1, true},
+		{"1 host: ng2", args{2000, 60000, 2}, fields{1}, "", -1, true},
+		{"1 host: ng3", args{100, 1000, 17}, fields{1}, "", -1, true},
+		{"2 hosts: ok", args{2000, 30000, 2}, fields{2}, "1.2.3.2", 6, false},
+		{"2 hosts: ng", args{6000, 30000, 2}, fields{2}, "", -1, true},
+		{"2 hosts: ng2", args{2000, 60000, 2}, fields{2}, "", -1, true},
+		{"3 hosts: ok", args{2000, 30000, 2}, fields{3}, "1.2.3.3", 8, false},
+		{"3 hosts: ng", args{9000, 30000, 2}, fields{3}, "", -1, true},
+		{"3 hosts: ng2", args{2000, 60000, 2}, fields{3}, "", -1, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := createTestPool("TestPool_getMostVacantHost", tt.f.n, false, "dummy")
 
-			got, got1, err := p.getMostVacantHost(tt.args.memSize, tt.args.dsSize, "")
+			got, got1, err := p.getMostVacantHost(tt.args.memSize, tt.args.dsSize, tt.args.cpuCores, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Pool.getMostVacantHost() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -348,10 +350,11 @@ func TestPool_appendVMResource(t *testing.T) {
 		hostIPs []string
 	}
 	type args struct {
-		hostIP  string
-		dsSize  int
-		memSize int
-		ds      string
+		hostIP   string
+		dsSize   int
+		memSize  int
+		cpuCores int
+		ds       string
 	}
 	tests := []struct {
 		name    string
@@ -362,13 +365,20 @@ func TestPool_appendVMResource(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"Normal pattern", fields{poolid, p.Hosts, p.hostIPs}, args{"", 30000, 2048, ""},
+		{"Normal pattern", fields{poolid, p.Hosts, p.hostIPs},
+			args{"", 30000, 2048, 2, ""},
 			"1.2.3.4", "Disk1", false},
-		{"Must choose host with largest storage", fields{poolid, p.Hosts, p.hostIPs}, args{"", 52000, 2048, ""},
+		{"Must choose host with largest storage", fields{poolid, p.Hosts, p.hostIPs},
+			args{"", 52000, 2048, 2, ""},
 			"1.2.3.2", "Disk1", false},
-		{"No host with this big storage", fields{poolid, p.Hosts, p.hostIPs}, args{"", 62000, 2048, ""},
+		{"No host with this big storage", fields{poolid, p.Hosts, p.hostIPs},
+			args{"", 62000, 2048, 2, ""},
 			"", "", true},
-		{"Requires too much memory", fields{poolid, p.Hosts, p.hostIPs}, args{"", 30000, 20000, ""},
+		{"Requires too much memory", fields{poolid, p.Hosts, p.hostIPs},
+			args{"", 30000, 20000, 2, ""},
+			"", "", true},
+		{"Too may CPU requirements", fields{poolid, p.Hosts, p.hostIPs},
+			args{"", 8000, 100, 17, ""},
 			"", "", true},
 	}
 	for _, tt := range tests {
@@ -379,7 +389,7 @@ func TestPool_appendVMResource(t *testing.T) {
 				hostIPs: tt.fields.hostIPs,
 			}
 			got, got1, err := p.appendVMResource(tt.args.hostIP,
-				tt.args.dsSize, tt.args.memSize, tt.args.ds, "")
+				tt.args.dsSize, tt.args.memSize, tt.args.cpuCores, tt.args.ds, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Pool.appendVMResource() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -51,6 +51,17 @@ func NewVM(
 	vm.portgroups = portgroups
 	vm.guestinfos = guestinfos
 	p, err := LoadPool(poolid, password)
+
+	logDebug(`NewVM(%s, %s, ***, %s, %d, %d, %s, %s, %v, %v)`,
+		poolid,
+		name,
+		ovfpath,
+		memSize, cpuCores,
+		hostIP,
+		datastore,
+		portgroups,
+		guestinfos)
+
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +71,8 @@ func NewVM(
 
 // CheckVMID Check if the id equals to the one in the database
 func CheckVMID(id, password string) error {
+	logDebug("CheckVMID(%s, ***)", id)
+
 	poolid, vmid, vmname, hostIP, _, _, _, err := getVMDBInfo(id)
 	if err != nil {
 		return err
@@ -88,7 +101,7 @@ func DestroyVM(id, password string) error {
 		return err
 	}
 
-	vm, err := NewVM(poolid, vmname, "", password,
+	vm, err := NewVM(poolid, vmname, password, "",
 		-1, -1, hostIP, datastore, nil, nil)
 	if err != nil {
 		return err
@@ -234,7 +247,7 @@ func (vm *VM) reserveVMResource() error {
 		if len(vm.portgroups) > 0 {
 			portgroup = vm.portgroups[0]
 		}
-		hostIP, ds, err = p.appendVMResource(hostIP2, dsSize, memSize, ds2, portgroup)
+		hostIP, ds, err = p.appendVMResource(hostIP2, dsSize, memSize, vm.cpuCores, ds2, portgroup)
 		if err != nil {
 			continue
 		}
@@ -294,7 +307,7 @@ func (vm *VM) registerVM() error {
 func (vm *VM) configureVMGuestInfo() error {
 	h := vm.pool.Hosts[vm.hostIP]
 	vmxPath := fmt.Sprintf("/vmfs/volumes/%s/%s/%s.vmx", vm.datastore, vm.name, vm.name)
-	cmd := fmt.Sprintf("ls %s 2> /dev/null; echo $?", vmxPath)
+	cmd := fmt.Sprintf("ls %s &> /dev/null; echo $?", vmxPath)
 	res, err := h.sshExp.run(cmdAssertVmxPath, cmd)
 	if err != nil {
 		return err
@@ -377,7 +390,8 @@ func DeployVM(poolid, name, password, ovfpath string,
 	hostIP string,
 	datastore string,
 	portgroups []string,
-	guestinfos []string) (string, error) {
+	guestinfos []string,
+	powerONVM bool) (string, error) {
 	vm, err := NewVM(poolid, name, password, ovfpath,
 		memSize, cpuCores, hostIP,
 		datastore, portgroups, guestinfos)
@@ -385,6 +399,7 @@ func DeployVM(poolid, name, password, ovfpath string,
 		return "", err
 	}
 
+	logDebug("vm.pool.checkIfVMExists(%s)", name)
 	vmexists, hostIP, err := vm.pool.checkIfVMExists(name)
 	if err != nil {
 		return "", err
@@ -393,37 +408,50 @@ func DeployVM(poolid, name, password, ovfpath string,
 		return "", errors.Errorf("VM with name %s already exists in %s", name, hostIP)
 	}
 
-	//ver := vm.pool.Esxi_ver
-
+	logDebug("vm.editOvf()")
 	if err := vm.editOvf(); err != nil {
 		return "", err
 	}
+
+	logDebug("vm.reserveVMResource()")
 	if err := vm.reserveVMResource(); err != nil {
 		deleteVMDB(poolid, vm.name)
 		return "", err
 	}
+
+	logDebug("loadHost(%s, %s, ***)", poolid, vm.hostIP)
 	h, err := loadHost(poolid, vm.hostIP, vm.password)
 	if err != nil {
 		return "", err
 	}
+
+	logDebug("vm.deployVM()")
 	if err := vm.deployVM(); err != nil {
 		return "", err
 	}
 
+	logDebug("h.getVMId(%s)", vm.name)
 	vmid, err := h.getVMId(vm.name)
 	if err != nil {
 		return "", err
 	}
+
 	vm.vmid = vmid
+	logDebug("vm.registerVM()")
 	if err := vm.registerVM(); err != nil {
 		return "", err
 	}
 
+	logDebug("vm.configureVMGuestInfo()")
 	if err := vm.configureVMGuestInfo(); err != nil {
 		return "", err
 	}
-	if err := vm.powerOnVM(); err != nil {
-		return "", err
+
+	if powerONVM {
+		logDebug("vm.powerOnVM()")
+		if err := vm.powerOnVM(); err != nil {
+			return "", err
+		}
 	}
 
 	return vm.getID(), nil
@@ -441,9 +469,11 @@ func (vm *VM) deployVM() error {
 		fmt.Sprintf("--network=%s", vm.portgroups[0]), vm.ovfpath,
 		fmt.Sprintf("vi://%s:%s@%s", vm.hostUser, vm.hostPass, vm.hostIP))
 	if isDebug == false {
-		if err := cmd.Run(); err != nil {
-			return err
+		out, err := cmd.Output()
+		if err != nil {
+			return errors.Wrapf(err, "Error executing: %s", cmdstr)
 		}
+		logDebug("%v", string(out))
 	}
 	return nil
 }

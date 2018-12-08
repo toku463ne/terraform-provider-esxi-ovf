@@ -25,7 +25,9 @@ func getDbPath(namespace, dbname string) string {
 }
 
 func openDb(namespace, dbname string) (*dbWrapper, error) {
-	db, err := sql.Open("sqlite3", getDbPath(namespace, dbname))
+	dbpath := getDbPath(namespace, dbname)
+	logDebug("openDb(%s, %s) dbpath=%s", namespace, dbname, dbpath)
+	db, err := sql.Open("sqlite3", dbpath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error opening DB %s", dbname)
 	}
@@ -71,8 +73,6 @@ func (dbw dbWrapper) updateDb(strsql string) error {
 }
 
 func (dbw dbWrapper) updateDbWithRetry(strsql string) error {
-	logDebug(`%s/%s sql="%s"`, dbw.namespace, dbw.dbname, strsql)
-
 	for i := 0; i < lockRetryCount; i++ {
 		err := dbw.updateDb(strsql)
 		if err == nil {

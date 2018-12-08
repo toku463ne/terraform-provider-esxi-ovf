@@ -28,6 +28,7 @@ const (
 	cmdGetHostname        = "getHostname"
 	cmdGetDatastores      = "getDatastores"
 	cmdGetTotalmem        = "getTotalmem"
+	cmdGetCPUCores        = "getCPUCores"
 	cmdGetActiveVMs       = "getActiveVMs"
 	cmdGetAllVMs          = "getAllVMs"
 	cmdGetVMIDFromVMName  = "getVMIDFromVMName"

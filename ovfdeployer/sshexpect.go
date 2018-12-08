@@ -128,21 +128,20 @@ func (se *sshExpect) run(cmdName, cmdFormat string, args ...interface{}) ([]stri
 	if len(s) == 0 {
 		return nil, errors.New("Could not get value from command line")
 	}
-	/*
-		a := removeBlanks(s[0])
-		i := 1
-		scmd := removeBlanks(cmd)
-		for a != scmd && i < len(s) {
-			a += removeBlanks(s[i])
-			i++
-		}
-		if a != scmd {
-			return nil, errors.New(fmt.Sprintf("Unexpected res from expect. got=%+v", match.Before))
-		}
-	*/
+
+	a := removeBlanks(s[0])
+	i := 1
+	scmd := removeBlanks(cmdstr)
+	for a != scmd && i < len(s) {
+		a += removeBlanks(s[i])
+		i++
+	}
+	if a != scmd {
+		return nil, errors.New(fmt.Sprintf("Unexpected res from expect. got=%+v", match.Before))
+	}
 
 	logDebug(">%+v", strings.Join(s, "\n"))
-	return s[1 : len(s)-1], nil
+	return s[i : len(s)-1], nil
 
 }
 

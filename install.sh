@@ -34,6 +34,7 @@ mkdir -p ~/.terraform.d/plugins/linux_amd64
 echo mv terraform-provider-esxi-ovf ~/.terraform.d/plugins/linux_amd64
 mv terraform-provider-esxi-ovf ~/.terraform.d/plugins/linux_amd64
 
+
 echo ""
 echo "Finished installation."
 

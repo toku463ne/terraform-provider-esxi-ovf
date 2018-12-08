@@ -238,7 +238,7 @@ func TestDeployVM(t *testing.T) {
 			ovfpath, tt.args.memSize,
 			tt.args.cpuCores, tt.args.hostIP,
 			tt.args.datastore, []string{"1.2.3.0"},
-			[]string{"guestinfo.test"})
+			[]string{"guestinfo.test"}, false)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("DeployVM() error = %v, wantErr %v", err, tt.wantErr)
 			return

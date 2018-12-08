@@ -48,6 +48,13 @@ func Test_HostInfoOffLine(t *testing.T) {
 		if h.memTotalMB != "16078" {
 			t.Errorf("getTotalMem() Non expected result. Got=%s Expected=%d", h.memTotalMB, 16078)
 		}
+		err = h.getCPUCores()
+		if err != nil {
+			t.Errorf("%+v", err)
+		}
+		if h.cpuCoresCnt != 8 {
+			t.Errorf("getCPUCores() Non expected result. Got=%d Expected=%d", h.cpuCoresCnt, 8)
+		}
 
 		err = h.getVMInfo()
 		if err != nil {

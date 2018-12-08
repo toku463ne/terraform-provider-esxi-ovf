@@ -1,0 +1,3 @@
+SHA1(esxi55_2disks-disk1.vmdk)= 93ef31490fa5db8af6329cabf8d337abeeae0f8c
+SHA1(esxi55_2disks-disk2.vmdk)= 43378a16f66611b6c79ddbc90f0eb9f53c471073
+SHA1(esxi55_2disks.ovf)= 1523c0be0fa34704af4f13ef55241acae02cf4e3

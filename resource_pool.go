@@ -78,6 +78,11 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	poolID := d.Id()
 	password := d.Get("password").(string)
 	hostIPs := interface2StrSlice(d.Get("host_ips").([]interface{}))
+	logLevel := d.Get("log_level").(string)
+
+	if err := odp.Init(poolID, "pool", logLevel); err != nil {
+		return err
+	}
 	if err := odp.AssertPool(poolID, password, hostIPs); err != nil {
 		return err
 	}
@@ -89,6 +94,11 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	poolID := d.Get("poolid").(string)
 	user := d.Get("user").(string)
 	password := d.Get("password").(string)
+	logLevel := d.Get("log_level").(string)
+
+	if err := odp.Init(poolID, "pool", logLevel); err != nil {
+		return err
+	}
 
 	if _, err := odp.ChangePool(poolID, user, password, hostIPs, ""); err != nil {
 		return err
@@ -99,6 +109,11 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
 	id := d.Id()
 	password := d.Get("password").(string)
+	logLevel := d.Get("log_level").(string)
+
+	if err := odp.Init(id, "pool", logLevel); err != nil {
+		return err
+	}
 	err := odp.DeletePool(id, password)
 	return err
 }

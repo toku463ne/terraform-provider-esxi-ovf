@@ -60,3 +60,7 @@ Retrieved runtime info
 Powered off
 %powerONVM% vim-cmd vmsvc/power.on %s &> /dev/null; echo $?
 0
+%getCPUCores% esxcli hardware cpu list | grep CPU: | wc -l
+8
+
+

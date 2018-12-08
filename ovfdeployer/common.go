@@ -71,7 +71,7 @@ func openLog(id, name string) error {
 	if id == "" {
 		fname = fmt.Sprintf("%s/%s.log", workDir, name)
 	} else {
-		fname = fmt.Sprintf("%s/%s_%s.log", workDir, name, id)
+		fname = fmt.Sprintf("%s/%s/%s.log", workDir, name, id)
 	}
 	logfd, err = os.Create(fname)
 	if err != nil {

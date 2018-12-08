@@ -20,6 +20,9 @@ type Pool struct {
 // NewPool .. Create pool object and saves to database
 func NewPool(id string, hostIPs []string,
 	user, pass, testID string) (*Pool, error) {
+	logDebug("NewPool(%s, %v, %s, ***, %s)", id, hostIPs,
+		user, pass, testID)
+
 	p := new(Pool)
 	if id == "" {
 		return nil, errors.New("NewPool(): Id cannot be nil")
@@ -39,6 +42,7 @@ func NewPool(id string, hostIPs []string,
 
 // LoadPool .. Load pool data from database
 func LoadPool(poolid, password string) (*Pool, error) {
+	logDebug("LoadPool(%s, ***)", poolid)
 	p := new(Pool)
 	p.ID = poolid
 	dbw, err := openDb(p.ID, poolDbName)
@@ -69,6 +73,7 @@ func LoadPool(poolid, password string) (*Pool, error) {
 
 // DeletePool .. Removes pool data from database
 func DeletePool(id, password string) error {
+	logDebug("DeletePool(%s, ***), id")
 	p, err := LoadPool(id, password)
 	if err != nil {
 		return err
@@ -89,6 +94,8 @@ func DeletePool(id, password string) error {
 
 // ChangePool .. Detect change of host ips and change database. Ignore changes at user, password, logLevel
 func ChangePool(id, user, password string, hostIPs []string, testID string) (*Pool, error) {
+	logDebug("ChangePool(%s, %s, ***, %s, %v, %s)", id, user, hostIPs, testID)
+
 	p, err := LoadPool(id, password)
 	if err != nil {
 		return nil, err
@@ -204,7 +211,7 @@ func (p *Pool) clearVMsTable() error {
 	return nil
 }
 
-func (p *Pool) getMostVacantHost(memSize, dsSize int, portgroup string) (string, int, error) {
+func (p *Pool) getMostVacantHost(memSize, dsSize, cpuCores int, portgroup string) (string, int, error) {
 	hosts := p.Hosts
 	maxVMAvailableCnt := 0
 	maxVMAvailableHost := ""
@@ -214,6 +221,12 @@ func (p *Pool) getMostVacantHost(memSize, dsSize int, portgroup string) (string,
 			continue
 		}
 		h := hosts[ip]
+
+		if cpuCores > h.cpuCoresCnt {
+			logDebug("Host %s has only %d CPU Cores. Want=%d", ip, h.cpuCoresCnt, cpuCores)
+			continue
+		}
+
 		if portgroup != "" {
 			hasPG := false
 			for pg := range h.portGroups {
@@ -222,20 +235,24 @@ func (p *Pool) getMostVacantHost(memSize, dsSize int, portgroup string) (string,
 				}
 			}
 			if hasPG == false {
+				logDebug("Host %s does not have porggroup=%s", ip, portgroup)
 				continue
 			}
 		}
 
-		_, _, dsAvailSize, err := p.getMostVacantStorage(ip)
+		_, dsMaxName, dsAvailSize, err := p.getMostVacantStorage(ip)
 		if err != nil {
 			return "", -1, err
 		}
 		if dsSize >= dsAvailSize {
+			logDebug("Most vacant storage in host=%s is %s. avail=%d want=%d", ip,
+				dsMaxName, dsAvailSize, dsSize)
 			continue
 		}
 
 		activeVMMemSize, err := calcVMMaxCnt(h.memActiveMB)
 		if err != nil {
+			logDebug("Error in calcVMMaxCnt(%d). %+v", h.memActiveMB, err)
 			continue
 		}
 		vmAvailableCnt := h.vmMaxCnt - activeVMMemSize
@@ -244,6 +261,10 @@ func (p *Pool) getMostVacantHost(memSize, dsSize int, portgroup string) (string,
 			return "", -1, err
 		}
 		if vmAvailableCnt <= vmMemSize {
+			memTotal, _ := strconv.Atoi(h.memTotalMB)
+			memActive, _ := strconv.Atoi(h.memActiveMB)
+			logDebug("Not enough memory in host=%s memAvailable=%d, need=%d",
+				ip, memTotal-memActive, memSize)
 			continue
 		}
 		if vmAvailableCnt > maxVMAvailableCnt {
@@ -309,13 +330,13 @@ func (p *Pool) getDsAvailSize(hostIP string, dsPath string) (int, error) {
 }
 
 func (p *Pool) appendVMResource(hostIP string,
-	dsSize int, memSize int, ds, portgroup string) (string, string, error) {
+	dsSize, memSize, cpuCores int, ds, portgroup string) (string, string, error) {
 	var err error
 	vmAvailCnt := 0
 	dsAvailSize := 0
 
 	if hostIP == "" {
-		hostIP, vmAvailCnt, err = p.getMostVacantHost(memSize, dsSize, portgroup)
+		hostIP, vmAvailCnt, err = p.getMostVacantHost(memSize, dsSize, cpuCores, portgroup)
 		if err != nil {
 			return "", "", err
 		}
@@ -360,6 +381,7 @@ func (p *Pool) appendVMResource(hostIP string,
 func (p *Pool) checkIfVMExists(vmname string) (bool, string, error) {
 	for _, ip := range p.hostIPs {
 		h := p.Hosts[ip]
+		logDebug("h.checkIfVMExists(%s) hostip=%s", vmname, ip)
 		existsInHost, err := h.checkIfVMExists(vmname)
 		if err != nil {
 			return false, "", errors.Wrapf(err, "Checking host %s", ip)

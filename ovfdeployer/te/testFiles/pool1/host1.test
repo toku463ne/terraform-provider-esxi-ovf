@@ -50,4 +50,6 @@ testvm
  2048 
  1024 
  3968
+%getCPUCores% esxcli hardware cpu list | grep CPU: | wc -l
+8
  

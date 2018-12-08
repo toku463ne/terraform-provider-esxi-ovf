@@ -1,8 +1,0 @@
-variable "hostip1" {}
-variable "hostip2" {}
-variable "password" {}
-variable "ovfpath" {}
-variable "portgroup" {}
-
-
-

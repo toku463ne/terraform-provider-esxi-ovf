@@ -85,6 +85,7 @@ func (dbw dbWrapper) getValFromKeyTable(tablename, key string) (string, error) {
 }
 
 func (dbw dbWrapper) getKeysFromKeyTable(tablename, val string) ([]string, error) {
+	logDebug("dbw.getKeysFromKeyTable(%s, %s) dbname=%s", tablename, val, dbw.dbname)
 	db := dbw.db
 	strsql := fmt.Sprintf(`SELECT KEY FROM %s WHERE VAL="%s";`,
 		tablename, val)

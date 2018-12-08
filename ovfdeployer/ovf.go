@@ -36,6 +36,7 @@ func getMbInt(valstr, unitstr string) (int, error) {
 func getWorkOvfPath(vmname, orgOvfPath string) (string, string) {
 	ovfDir := ""
 	if orgOvfPath != "" {
+		logDebug("filepath.Dir(%s)", orgOvfPath)
 		ovfDir = filepath.Dir(orgOvfPath)
 	} else {
 		ovfDir = workDir
@@ -50,9 +51,12 @@ func getWorkOvfPath(vmname, orgOvfPath string) (string, string) {
 
 func (vm *VM) editOvf() error {
 	ovfDir, ovfpath := getWorkOvfPath(vm.name, vm.ovfpath)
+	if vm.ovfpath == "" {
+		return errors.Errorf("vm.ovfpath is empty")
+	}
 	in, err := os.Open(vm.ovfpath)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "editOvf() ovfpath=%s", vm.ovfpath)
 	}
 	defer func() error {
 		if err := in.Close(); err != nil {
@@ -107,7 +111,13 @@ func (vm *VM) editOvf() error {
 
 		if title == "References" && strings.Contains(line, `<File`) {
 			vmdkFileName := getXMLOvfAttr(line, "href")
-			vmdkPath := fmt.Sprintf("%s/%s", ovfDir, vmdkFileName)
+			vmdkPath := ""
+			if ovfDir[:1] == "/" {
+				vmdkPath = fmt.Sprintf("%s/%s", ovfDir, vmdkFileName)
+
+			} else {
+				vmdkPath = fmt.Sprintf("../%s/%s", ovfDir, vmdkFileName)
+			}
 			line = strings.Replace(line, vmdkFileName, vmdkPath, 1)
 		}
 

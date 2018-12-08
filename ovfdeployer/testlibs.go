@@ -126,6 +126,7 @@ func createTestHost(poolid string, n int, doSync bool, testFile string) *host {
 	h.version = "x"
 	h.memTotalMB = fmt.Sprintf("%d000", n*2+2)
 	h.memActiveMB = fmt.Sprintf("%d000", n+1)
+	h.cpuCoresCnt = 16
 	ma, err := calcVMMaxCnt(h.memTotalMB)
 	h.sshExp.testFile = testFile
 

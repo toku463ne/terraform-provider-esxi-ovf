@@ -17,6 +17,7 @@ type host struct {
 	sshExp        sshExpect
 	memTotalMB    string
 	memActiveMB   string
+	cpuCoresCnt   int
 	vmMaxCnt      int
 	vmCnt         int
 	portGroups    Table
@@ -41,6 +42,7 @@ func (h *host) sync2Db() error {
 	keytables["BASIC"] = Table{
 		"memTotalMB":  h.memTotalMB,
 		"memActiveMB": h.memActiveMB,
+		"cpuCoresCnt": strconv.Itoa(h.cpuCoresCnt),
 		"user":        h.user,
 		"vmCnt":       strconv.Itoa(h.vmCnt),
 		"version":     h.version,
@@ -81,6 +83,10 @@ func loadHost(poolid, hostIP, password string) (*host, error) {
 	}
 	h.memTotalMB = basict["memTotalMB"]
 	h.memActiveMB = basict["memActiveMB"]
+	h.cpuCoresCnt, err = strconv.Atoi(basict["cpuCoresCnt"])
+	if err != nil {
+		return nil, err
+	}
 	h.user = basict["user"]
 	h.version = basict["version"]
 	cnt, err := strconv.Atoi(basict["vmCnt"])
@@ -153,6 +159,9 @@ func (h *host) setupEsxiHost() error {
 	if err := h.getTotalMem(); err != nil {
 		return err
 	}
+	if err := h.getCPUCores(); err != nil {
+		return err
+	}
 	if err := h.getVMInfo(); err != nil {
 		return err
 	}
@@ -188,8 +197,8 @@ func (h *host) destroyVM(vmid, vmname, vmdir string) error {
 		return errors.New(fmt.Sprintf("Vmid and Name for Vmid %s do not match. Expected=%s Got=%s",
 			vmid, vmname, vmname2))
 	}
-	cmd := fmt.Sprintf("ls %s/%s/%s.vmx > /dev/null && vim-cmd /vmsvc/destroy %s; echo $?",
-		vmdir, vmname, vmname, vmid)
+	cmd := fmt.Sprintf("ls %s/%s.vmx &> /dev/null && vim-cmd /vmsvc/destroy %s",
+		vmdir, vmname, vmid)
 	if isDebug {
 		logInfo(cmd)
 	} else {
