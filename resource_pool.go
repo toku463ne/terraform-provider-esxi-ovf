@@ -62,11 +62,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	password := d.Get("password").(string)
 	logLevel := d.Get("log_level").(string)
 
-	if err := odp.Init(poolID, "pool", logLevel); err != nil {
-		return err
-	}
-
-	pool, err := odp.NewPool(poolID, hostIPs, user, password, "")
+	pool, err := odp.NewPool(poolID, hostIPs, user, password, "", logLevel)
 	if err != nil {
 		return err
 	}
@@ -80,10 +76,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	hostIPs := interface2StrSlice(d.Get("host_ips").([]interface{}))
 	logLevel := d.Get("log_level").(string)
 
-	if err := odp.Init(poolID, "pool", logLevel); err != nil {
-		return err
-	}
-	if err := odp.AssertPool(poolID, password, hostIPs); err != nil {
+	if err := odp.AssertPool(poolID, password, hostIPs, logLevel); err != nil {
 		return err
 	}
 	return nil
@@ -96,11 +89,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	password := d.Get("password").(string)
 	logLevel := d.Get("log_level").(string)
 
-	if err := odp.Init(poolID, "pool", logLevel); err != nil {
-		return err
-	}
-
-	if _, err := odp.ChangePool(poolID, user, password, hostIPs, ""); err != nil {
+	if _, err := odp.ChangePool(poolID, user, password, hostIPs, "", logLevel); err != nil {
 		return err
 	}
 	return nil
@@ -111,9 +100,6 @@ func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
 	password := d.Get("password").(string)
 	logLevel := d.Get("log_level").(string)
 
-	if err := odp.Init(id, "pool", logLevel); err != nil {
-		return err
-	}
-	err := odp.DeletePool(id, password)
+	err := odp.DeletePool(id, password, logLevel)
 	return err
 }

@@ -17,9 +17,17 @@ type Pool struct {
 	hostIPs []string
 }
 
+func initPoolApp(id, logLevelStr string) error {
+	return initApp(id, appPool, logLevelStr)
+}
+
 // NewPool .. Create pool object and saves to database
 func NewPool(id string, hostIPs []string,
-	user, pass, testID string) (*Pool, error) {
+	user, pass, testID, logLevel string) (*Pool, error) {
+	if err := initPoolApp(id, logLevel); err != nil {
+		return nil, err
+	}
+
 	logDebug("NewPool(%s, %v, %s, ***, %s)", id, hostIPs,
 		user, pass, testID)
 
@@ -37,11 +45,15 @@ func NewPool(id string, hostIPs []string,
 	if err := p.sync2Db(); err != nil {
 		return nil, err
 	}
+	closeApp(logLevel)
 	return p, nil
 }
 
 // LoadPool .. Load pool data from database
-func LoadPool(poolid, password string) (*Pool, error) {
+func LoadPool(poolid, password, logLevel string) (*Pool, error) {
+	if err := initPoolApp(poolid, logLevel); err != nil {
+		return nil, err
+	}
 	logDebug("LoadPool(%s, ***)", poolid)
 	p := new(Pool)
 	p.ID = poolid
@@ -68,13 +80,17 @@ func LoadPool(poolid, password string) (*Pool, error) {
 		}
 		p.Hosts[ip] = h
 	}
+	closeApp(logLevel)
 	return p, nil
 }
 
 // DeletePool .. Removes pool data from database
-func DeletePool(id, password string) error {
+func DeletePool(id, password, logLevel string) error {
+	if err := initPoolApp(id, logLevel); err != nil {
+		return err
+	}
 	logDebug("DeletePool(%s, ***), id")
-	p, err := LoadPool(id, password)
+	p, err := LoadPool(id, password, "")
 	if err != nil {
 		return err
 	}
@@ -89,14 +105,19 @@ func DeletePool(id, password string) error {
 	if err := deleteDb(id, vmDbName); err != nil {
 		return err
 	}
+	closeApp(logLevel)
 	return err
 }
 
 // ChangePool .. Detect change of host ips and change database. Ignore changes at user, password, logLevel
-func ChangePool(id, user, password string, hostIPs []string, testID string) (*Pool, error) {
+func ChangePool(id, user, password string, hostIPs []string,
+	testID, logLevel string) (*Pool, error) {
+	if err := initPoolApp(id, logLevel); err != nil {
+		return nil, err
+	}
 	logDebug("ChangePool(%s, %s, ***, %s, %v, %s)", id, user, hostIPs, testID)
 
-	p, err := LoadPool(id, password)
+	p, err := LoadPool(id, password, "")
 	if err != nil {
 		return nil, err
 	}
@@ -112,12 +133,17 @@ func ChangePool(id, user, password string, hostIPs []string, testID string) (*Po
 			return nil, err
 		}
 	}
+	closeApp(logLevel)
 	return p, nil
 }
 
 // AssertPool .. Check if database and tf file matches
-func AssertPool(id, password string, hostIPs []string) error {
-	p, err := LoadPool(id, password)
+func AssertPool(id, password string, hostIPs []string,
+	logLevel string) error {
+	if err := initPoolApp(id, logLevel); err != nil {
+		return err
+	}
+	p, err := LoadPool(id, password, "")
 	if err != nil {
 		return err
 	}
@@ -127,7 +153,7 @@ func AssertPool(id, password string, hostIPs []string) error {
 		return errors.New(fmt.Sprintf("Host IPs do not match. got=%+v expected=%+v",
 			hostIPs, p.hostIPs))
 	}
-
+	closeApp(logLevel)
 	return nil
 }
 

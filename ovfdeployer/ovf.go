@@ -39,13 +39,11 @@ func getWorkOvfPath(vmname, orgOvfPath string) (string, string) {
 		logDebug("filepath.Dir(%s)", orgOvfPath)
 		ovfDir = filepath.Dir(orgOvfPath)
 	} else {
-		ovfDir = workDir
+		ovfDir = workSubDir
 	}
+	setWorkSubDir()
 	tmp := strings.Split(orgOvfPath, "/")
-	if _, err := os.Stat(workDir); os.IsNotExist(err) {
-		os.Mkdir(workDir, 0755)
-	}
-	ovfPath := fmt.Sprintf("%s/%s_%s", workDir, vmname, tmp[len(tmp)-1])
+	ovfPath := fmt.Sprintf("%s/%s_%s", workSubDir, vmname, tmp[len(tmp)-1])
 	return ovfDir, ovfPath
 }
 
@@ -112,11 +110,12 @@ func (vm *VM) editOvf() error {
 		if title == "References" && strings.Contains(line, `<File`) {
 			vmdkFileName := getXMLOvfAttr(line, "href")
 			vmdkPath := ""
-			if ovfDir[:1] == "/" {
+			if vmdkFileName[:1] == "/" {
+				vmdkPath = vmdkFileName
+			} else if ovfDir[:1] == "/" {
 				vmdkPath = fmt.Sprintf("%s/%s", ovfDir, vmdkFileName)
-
 			} else {
-				vmdkPath = fmt.Sprintf("../%s/%s", ovfDir, vmdkFileName)
+				vmdkPath = fmt.Sprintf("../../%s/%s", ovfDir, vmdkFileName)
 			}
 			line = strings.Replace(line, vmdkFileName, vmdkPath, 1)
 		}

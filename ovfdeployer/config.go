@@ -12,6 +12,8 @@ const (
 	workDir               = "tfwork"
 	ovfBin                = "/usr/bin/ovftool"
 	vmVolumesPath         = "/vmfs/volumes"
+	appVM                 = "vm"
+	appPool               = "pool"
 	logLevelError         = 4
 	logLevelErrorStr      = "error"
 	logLevelWarning       = 2
@@ -20,6 +22,7 @@ const (
 	logLevelInfoStr       = "info"
 	logLevelDebug         = 0
 	logLevelDebugStr      = "debug"
+	logLevel4Test         = logLevelInfoStr
 	sshTimeout            = 10 * time.Second
 	ssh                   = "/usr/bin/ssh"
 	bash                  = "/bin/bash"

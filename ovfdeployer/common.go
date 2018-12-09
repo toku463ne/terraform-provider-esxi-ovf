@@ -18,6 +18,9 @@ import (
 var isDebug bool
 var pwd string
 var currentlogLevel int
+var currentLogLevelStr string
+var workSubDir string
+var poolID string
 
 const (
 	// FlagLocked Queue table is locked
@@ -35,16 +38,38 @@ type Table map[string]string
 
 var logfd *os.File
 
+func setWorkSubDir() {
+	if poolID == "" {
+		workSubDir = fmt.Sprintf("./%s", workDir)
+	} else {
+		workSubDir = fmt.Sprintf("%s/%s", workDir, poolID)
+	}
+	ensureDir(workSubDir)
+}
+
 // Init .. Initialize env
-func Init(id, appname, logLevelStr string) error {
+func initApp(id, appname, logLevelStr string) error {
+	//Do not init in cases log level is not specified
+	if logLevelStr == "" {
+		return nil
+	}
 	setPwd()
+	poolID = id
+	setWorkSubDir()
 
 	for _, s := range []string{id, appname} {
 		if checkID(s) == false {
 			return errors.Errorf(`May only contain lowercase alphanumeric characters & underscores. got=%s`, s)
 		}
 	}
+	setLogLevel(logLevelStr)
+	if err := openLog(appname); err != nil {
+		return err
+	}
+	return nil
+}
 
+func setLogLevel(logLevelStr string) {
 	switch logLevelStr {
 	case logLevelDebugStr:
 		currentlogLevel = logLevelDebug
@@ -55,24 +80,26 @@ func Init(id, appname, logLevelStr string) error {
 	case logLevelErrorStr:
 		currentlogLevel = logLevelError
 	}
-	if err := openLog(id, appname); err != nil {
-		return err
+	currentLogLevelStr = logLevelStr
+}
+
+func closeApp(logLevelStr string) {
+	if logLevelStr != "" {
+		closeLog()
 	}
-	return nil
+}
+
+func ensureDir(dirName string) {
+	if _, err := os.Stat(dirName); os.IsNotExist(err) {
+		os.MkdirAll(dirName, 0755)
+	}
 }
 
 // OpenLog open log file
-func openLog(id, name string) error {
+func openLog(name string) error {
 	var err error
-	if _, err = os.Stat(workDir); os.IsNotExist(err) {
-		os.Mkdir(workDir, 0755)
-	}
-	fname := ""
-	if id == "" {
-		fname = fmt.Sprintf("%s/%s.log", workDir, name)
-	} else {
-		fname = fmt.Sprintf("%s/%s/%s.log", workDir, name, id)
-	}
+	setWorkSubDir()
+	fname := fmt.Sprintf("%s/%s.log", workSubDir, name)
 	logfd, err = os.Create(fname)
 	if err != nil {
 		return err

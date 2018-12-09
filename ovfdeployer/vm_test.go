@@ -176,7 +176,7 @@ func TestVm_ReserveVMResource(t *testing.T) {
 			tt.fields.hostIP,
 			tt.fields.datastore,
 			tt.fields.portgroups,
-			tt.fields.guestinfos)
+			tt.fields.guestinfos, currentLogLevelStr)
 		if err != nil {
 			t.Errorf("%+v", err)
 			return
@@ -238,7 +238,7 @@ func TestDeployVM(t *testing.T) {
 			ovfpath, tt.args.memSize,
 			tt.args.cpuCores, tt.args.hostIP,
 			tt.args.datastore, []string{"1.2.3.0"},
-			[]string{"guestinfo.test"}, false)
+			[]string{"guestinfo.test"}, false, currentLogLevelStr)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("DeployVM() error = %v, wantErr %v", err, tt.wantErr)
 			return
@@ -269,16 +269,16 @@ func TestDeployVM(t *testing.T) {
 			t.Errorf("DeployVM() mem size got=%d want=%d", memPerVMMB2, tt.args.memSize)
 		}
 
-		if err := CheckVMID(got, ""); err != nil {
+		if err := CheckVMID(got, "", currentLogLevelStr); err != nil {
 			t.Errorf("CheckVMID() %+v", err)
 		}
 
-		if err := DestroyVM(got, ""); err != nil {
+		if err := DestroyVM(got, "", currentLogLevelStr); err != nil {
 			t.Errorf("DestroyVM() %+v", err)
 			return
 		}
 
-		if err := CheckVMID(got, ""); err == nil {
+		if err := CheckVMID(got, "", currentLogLevelStr); err == nil {
 			t.Errorf("CheckVMID() VM exists after destroy")
 		}
 	}

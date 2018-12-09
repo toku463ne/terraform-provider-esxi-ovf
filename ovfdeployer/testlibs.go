@@ -26,6 +26,8 @@ func getTestFilesDir() string {
 func init4Test(testname string) error {
 	isDebug = true
 	setPwd()
+	setLogLevel(logLevel4Test)
+	//poolID = testname
 	testdir := ""
 	if testname == "" {
 		testdir = testBaseDir
@@ -41,9 +43,9 @@ func init4Test(testname string) error {
 	if err != nil {
 		return err
 	}
-	if err := openLog("test", testname); err != nil {
-		return err
-	}
+	//if err := openLog("test"); err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -166,5 +168,5 @@ func createTestVM(poolid, name string, createPoolFirst bool) (*VM, error) {
 		"",
 		"",
 		[]string{"1.2.3.0"},
-		[]string{""})
+		[]string{""}, currentLogLevelStr)
 }

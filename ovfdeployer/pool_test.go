@@ -35,13 +35,14 @@ func TestPoolFuncs(t *testing.T) {
 				t.Errorf("%+v", err)
 			}
 
-			got, err := NewPool(tt.args.id, tt.args.hostIPs, tt.args.user, tt.args.pass, tt.args.testID)
+			got, err := NewPool(tt.args.id, tt.args.hostIPs,
+				tt.args.user, tt.args.pass, tt.args.testID, currentLogLevelStr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPool() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			p2, err := LoadPool(tt.args.id, tt.args.pass)
+			p2, err := LoadPool(tt.args.id, tt.args.pass, currentLogLevelStr)
 			if err != nil {
 				t.Errorf("%+v", err)
 			}
@@ -49,12 +50,13 @@ func TestPoolFuncs(t *testing.T) {
 				t.Errorf("got.ID(=%s) and p2.ID(=%s) is not equal.", got.ID, p2.ID)
 			}
 
-			if err := AssertPool(tt.args.id, tt.args.pass, got.hostIPs); err != nil {
+			if err := AssertPool(tt.args.id, tt.args.pass, got.hostIPs, currentLogLevelStr); err != nil {
 				t.Errorf("AssertPool(): %+v", err)
 			}
 
 			dummyIPs := append(got.hostIPs, "1.1.1.1")
-			if err := AssertPool(tt.args.id, tt.args.pass, dummyIPs); err == nil {
+			if err := AssertPool(tt.args.id, tt.args.pass,
+				dummyIPs, currentLogLevelStr); err == nil {
 				t.Errorf("AssertPool(): Host members changed from %v to %v. Must return err",
 					got.hostIPs, dummyIPs)
 			}
@@ -95,7 +97,7 @@ func TestPoolFuncs(t *testing.T) {
 				t.Errorf("DB file %s does not exist.", dbpath)
 			}
 
-			if err := DeletePool(tt.args.id, tt.args.pass); err != nil {
+			if err := DeletePool(tt.args.id, tt.args.pass, currentLogLevelStr); err != nil {
 				t.Errorf("%+v", err)
 			}
 			if fileExists(dbpath) {
@@ -134,7 +136,8 @@ func TestDeletePool(t *testing.T) {
 				t.Errorf("%+v", err)
 			}
 
-			got, err := NewPool(tt.args.id, tt.args.hostIPs, tt.args.user, tt.args.pass, tt.args.testID)
+			got, err := NewPool(tt.args.id, tt.args.hostIPs,
+				tt.args.user, tt.args.pass, tt.args.testID, currentLogLevelStr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPool() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -152,7 +155,7 @@ func TestDeletePool(t *testing.T) {
 				t.Errorf("DB file %s does not exist.", dbpath)
 			}
 
-			if err := DeletePool(tt.args.id, tt.args.pass); err != nil {
+			if err := DeletePool(tt.args.id, tt.args.pass, currentLogLevelStr); err != nil {
 				t.Errorf("%+v", err)
 			}
 			if fileExists(dbpath) {
@@ -213,12 +216,13 @@ func TestChangePool(t *testing.T) {
 				t.Errorf("%+v", err)
 			}
 			_, err := NewPool(tt.args.id, tt.args.hostIPs,
-				tt.args.user, tt.args.password, tt.args.testID)
+				tt.args.user, tt.args.password, tt.args.testID, currentLogLevelStr)
 			if err != nil {
 				t.Errorf("%+v", err)
 			}
 
-			got, err := ChangePool(tt.args.id, tt.args.user, tt.args.password, tt.args.hostIPs2, tt.args.testID)
+			got, err := ChangePool(tt.args.id, tt.args.user,
+				tt.args.password, tt.args.hostIPs2, tt.args.testID, currentLogLevelStr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ChangePool() error = %v, wantErr %v", err, tt.wantErr)
 				return

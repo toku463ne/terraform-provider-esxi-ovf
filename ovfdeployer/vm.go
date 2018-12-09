@@ -27,6 +27,10 @@ type VM struct {
 	pool                      Pool
 }
 
+func initVMApp(id, logLevelStr string) error {
+	return initApp(id, appVM, logLevelStr)
+}
+
 // NewVM set each infos, load pool data from Sqlite
 func NewVM(
 	poolid string,
@@ -37,7 +41,11 @@ func NewVM(
 	hostIP string,
 	datastore string,
 	portgroups []string,
-	guestinfos []string) (*VM, error) {
+	guestinfos []string,
+	logLevel string) (*VM, error) {
+	if err := initVMApp(poolid, logLevel); err != nil {
+		return nil, err
+	}
 	vm := new(VM)
 	vm.poolid = poolid
 	vm.name = name
@@ -50,7 +58,7 @@ func NewVM(
 	vm.datastore = datastore
 	vm.portgroups = portgroups
 	vm.guestinfos = guestinfos
-	p, err := LoadPool(poolid, password)
+	p, err := LoadPool(poolid, password, "")
 
 	logDebug(`NewVM(%s, %s, ***, %s, %d, %d, %s, %s, %v, %v)`,
 		poolid,
@@ -66,18 +74,27 @@ func NewVM(
 		return nil, err
 	}
 	vm.pool = *p
+	closeApp(logLevel)
 	return vm, nil
 }
 
 // CheckVMID Check if the id equals to the one in the database
-func CheckVMID(id, password string) error {
-	logDebug("CheckVMID(%s, ***)", id)
-
+func CheckVMID(id, password, logLevel string) error {
+	poolid, hostIP, vmid, err := expandID(id)
+	if err != nil {
+		return err
+	}
+	if err := initVMApp(poolid, logLevel); err != nil {
+		return err
+	}
 	poolid, vmid, vmname, hostIP, _, _, _, err := getVMDBInfo(id)
 	if err != nil {
 		return err
 	}
-	p, err := LoadPool(poolid, password)
+
+	logDebug("CheckVMID(%s, ***)", id)
+
+	p, err := LoadPool(poolid, password, "")
 	if err != nil {
 		return err
 	}
@@ -89,20 +106,28 @@ func CheckVMID(id, password string) error {
 		return errors.New(fmt.Sprintf("VmId not match. Expected=%s Got=%s vmname=%s",
 			vmid, vmid2, vmname))
 	}
+	closeApp(logLevel)
 	return nil
 }
 
 // DestroyVM Deletes VM from ESXi.
-func DestroyVM(id, password string) error {
-	logInfo("DestroyVM(%s)", id)
+func DestroyVM(id, password, logLevel string) error {
+	poolid, _, _, err := expandID(id)
+	if err != nil {
+		return err
+	}
+	if err := initVMApp(poolid, logLevel); err != nil {
+		return err
+	}
 
+	logInfo("DestroyVM(%s)", id)
 	poolid, vmid, vmname, hostIP, _, _, datastore, err := getVMDBInfo(id)
 	if err != nil {
 		return err
 	}
 
 	vm, err := NewVM(poolid, vmname, password, "",
-		-1, -1, hostIP, datastore, nil, nil)
+		-1, -1, hostIP, datastore, nil, nil, "")
 	if err != nil {
 		return err
 	}
@@ -122,7 +147,7 @@ func DestroyVM(id, password string) error {
 	if err := h.destroyVM(vmid, vmname, vmdir); err != nil {
 		return err
 	}
-	if err := deleteVMDB(poolid, vmname); err != nil {
+	if err := deleteVMDB(vmname); err != nil {
 		return err
 	}
 	_, ovfpath := getWorkOvfPath(vmname, "")
@@ -131,10 +156,11 @@ func DestroyVM(id, password string) error {
 			return err
 		}
 	}
+	closeApp(logLevel)
 	return nil
 }
 
-func deleteVMDB(poolID, vmname string) error {
+func deleteVMDB(vmname string) error {
 	dbw, err := openDb(poolID, vmDbName)
 	if err != nil {
 		return err
@@ -228,7 +254,7 @@ func (vm *VM) reserveVMResource() error {
 	if err != nil {
 		return err
 	}
-	p, err := LoadPool(vm.poolid, vm.password)
+	p, err := LoadPool(vm.poolid, vm.password, "")
 	if err != nil {
 		return err
 	}
@@ -391,10 +417,15 @@ func DeployVM(poolid, name, password, ovfpath string,
 	datastore string,
 	portgroups []string,
 	guestinfos []string,
-	powerONVM bool) (string, error) {
+	powerONVM bool,
+	logLevel string) (string, error) {
+	if err := initVMApp(poolid, logLevel); err != nil {
+		return "", err
+	}
+
 	vm, err := NewVM(poolid, name, password, ovfpath,
 		memSize, cpuCores, hostIP,
-		datastore, portgroups, guestinfos)
+		datastore, portgroups, guestinfos, "")
 	if err != nil {
 		return "", err
 	}
@@ -415,12 +446,12 @@ func DeployVM(poolid, name, password, ovfpath string,
 
 	logDebug("vm.reserveVMResource()")
 	if err := vm.reserveVMResource(); err != nil {
-		deleteVMDB(poolid, vm.name)
+		deleteVMDB(vm.name)
 		return "", err
 	}
 
-	logDebug("loadHost(%s, %s, ***)", poolid, vm.hostIP)
-	h, err := loadHost(poolid, vm.hostIP, vm.password)
+	logDebug("loadHost(%s, %s, ***)", poolID, vm.hostIP)
+	h, err := loadHost(poolID, vm.hostIP, vm.password)
 	if err != nil {
 		return "", err
 	}
@@ -453,7 +484,7 @@ func DeployVM(poolid, name, password, ovfpath string,
 			return "", err
 		}
 	}
-
+	closeApp(logLevel)
 	return vm.getID(), nil
 }
 
