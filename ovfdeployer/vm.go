@@ -342,7 +342,7 @@ func (vm *VM) configureVMGuestInfo() error {
 		return errors.New(fmt.Sprintf("File %s.vmx does not exist", vm.name))
 	}
 	for _, guestinfo := range vm.guestinfos {
-		cmd := fmt.Sprintf("grep %s %s &> /dev/null || echo %s >> %s; echo $?", guestinfo, vmxPath,
+		cmd := fmt.Sprintf("grep %s %s &> /dev/null || echo guestinfo.%s >> %s; echo $?", guestinfo, vmxPath,
 			guestinfo, vmxPath)
 		res, err = h.sshExp.run(cmdAddGuestInfo, cmd)
 		if err != nil {

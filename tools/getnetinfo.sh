@@ -6,7 +6,7 @@ set -x
 VMTOOLSD="/usr/bin/vmtoolsd"
 
 function getinfo() {
-    $VMTOOLSD --cmd "info-get guestinfo.$1" 2>/dev/null
+    $VMTOOLSD --cmd "info-get net.guestinfo.$1" 2>/dev/null
 }
 
 function resolve_distro() {
