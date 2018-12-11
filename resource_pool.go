@@ -37,9 +37,9 @@ func resourcePool() *schema.Resource {
 				Required:    true,
 				DefaultFunc: func() (interface{}, error) { return getSchema("password") },
 			},
-			"ballooningMB": &schema.Schema{
+			"ballooning": &schema.Schema{
 				Type:     schema.TypeInt,
-				Required: false,
+				Optional: true,
 				Default:  0,
 			},
 			"log_level": &schema.Schema{

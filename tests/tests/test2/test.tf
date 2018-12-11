@@ -5,8 +5,9 @@ variable "ovfpath" {}
 variable "portgroup" {}
 
 resource "esxi-ovf_pool" "my-pool" {
-  poolid    = "testpool"
-  log_level = "debug"
+  poolid     = "testpool"
+  log_level  = "debug"
+  ballooning = 16000
 
   host_ips = [
     "${var.hostip1}",
@@ -27,7 +28,7 @@ resource "esxi-ovf_vm" "vm1" {
   log_level   = "debug"
 
   guestinfos = [
-    "guestinfo.config.hostname = test",
+    "config.hostname = test",
   ]
 }
 

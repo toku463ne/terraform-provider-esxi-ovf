@@ -95,7 +95,7 @@ func loadHost(poolid, hostIP, password string) (*host, error) {
 	if err != nil {
 		return nil, err
 	}
-	h.memTotalMB += h.ballooningMB
+	//h.memTotalMB += h.ballooningMB
 	h.cpuCoresCnt, err = strconv.Atoi(basict["cpuCoresCnt"])
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func loadHost(poolid, hostIP, password string) (*host, error) {
 	}
 	h.vmCnt = cnt
 
-	ma, err := calcVMMaxCnt(h.memTotalMB)
+	ma, err := calcVMMaxCnt(h.memTotalMB + h.ballooningMB)
 	if err != nil {
 		return nil, err
 	}
