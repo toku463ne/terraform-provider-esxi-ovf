@@ -38,7 +38,8 @@ func Test_hostFuncs(t *testing.T) {
 			{"ip", h.ip, h2.ip},
 			{"user", h.user, h2.user},
 			{"version", h.version, h2.version},
-			{"memTotalMB", h.memTotalMB, h2.memTotalMB},
+			{"memTotalMB", strconv.Itoa(h.memTotalMB),
+				strconv.Itoa(h2.memTotalMB)},
 		}
 		for _, s := range a {
 			if s[1] != s[2] || s[1] == "" {
@@ -128,8 +129,8 @@ func Test_newHostOffline(t *testing.T) {
 				v, v3)
 		}
 
-		if h.memTotalMB != "16078" {
-			t.Errorf("getTotalMem() Non expected result. Got=%s Expected=%d", h.memTotalMB, 16078)
+		if h.memTotalMB != 16078 {
+			t.Errorf("getTotalMem() Non expected result. Got=%d Expected=%d", h.memTotalMB, 16078)
 		}
 
 		if h.vmCnt != 6 {
@@ -169,7 +170,7 @@ func Test_newHostOnline(t *testing.T) {
 		t.Errorf("getDsInfo() Could not get ds info")
 	}
 
-	if h.memTotalMB == "" {
+	if h.memTotalMB == 0 {
 		t.Errorf("getTotalMem() Could not get memTotal.")
 	}
 

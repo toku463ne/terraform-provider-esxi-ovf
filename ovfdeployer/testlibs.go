@@ -61,7 +61,7 @@ func getTestFiles(targetFolder string) ([]string, error) {
 }
 
 func getOfflineTestHost(testFile string) (*host, error) {
-	h, err := newHost("test", "testhost", "offlineuser", "", testFile)
+	h, err := newHost("test", "testhost", "offlineuser", "", 0, testFile)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func getOnlineTestHost(hosttype string) (*host, error) {
 	hostIP := inf["ipaddr"]
 	user := inf["user"]
 	pass := inf["password"]
-	h, err := newHost(poolid, hostIP, user, pass, "")
+	h, err := newHost(poolid, hostIP, user, pass, 0, "")
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +126,8 @@ func createTestHost(poolid string, n int, doSync bool, testFile string) *host {
 	h.user = "root"
 	h.pass = "hogehoge"
 	h.version = "x"
-	h.memTotalMB = fmt.Sprintf("%d000", n*2+2)
-	h.memActiveMB = fmt.Sprintf("%d000", n+1)
+	h.memTotalMB = (n*2 + 2) * 1000
+	h.memActiveMB = (n + 1) * 1000
 	h.cpuCoresCnt = 16
 	ma, err := calcVMMaxCnt(h.memTotalMB)
 	h.sshExp.testFile = testFile

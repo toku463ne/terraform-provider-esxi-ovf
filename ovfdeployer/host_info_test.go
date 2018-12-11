@@ -45,8 +45,8 @@ func Test_HostInfoOffLine(t *testing.T) {
 		if err != nil {
 			t.Errorf("%+v", err)
 		}
-		if h.memTotalMB != "16078" {
-			t.Errorf("getTotalMem() Non expected result. Got=%s Expected=%d", h.memTotalMB, 16078)
+		if h.memTotalMB != 16078 {
+			t.Errorf("getTotalMem() Non expected result. Got=%d Expected=%d", h.memTotalMB, 16078)
 		}
 		err = h.getCPUCores()
 		if err != nil {
@@ -75,9 +75,9 @@ func Test_HostInfoOffLine(t *testing.T) {
 				h.registeredVMs["103"], "mineubuntu")
 		}
 
-		if h.memActiveMB != "27328" {
-			t.Errorf("getVMInfo() Non expected h.memActiveMB. Got=%s Expected=%s",
-				h.memActiveMB, "27328")
+		if h.memActiveMB != 27328 {
+			t.Errorf("getVMInfo() Non expected h.memActiveMB. Got=%d Expected=%d",
+				h.memActiveMB, 27328)
 		}
 
 		vmid, err := h.getVMId("mineubuntu")
@@ -145,7 +145,7 @@ func Test_hostInfoOnLine(t *testing.T) {
 	if err != nil {
 		t.Errorf("%+v", err)
 	}
-	if h.memTotalMB == "" {
+	if h.memTotalMB == 0 {
 		t.Errorf("getTotalMem() Could not get memTotal.")
 	}
 
@@ -166,14 +166,9 @@ func Test_hostInfoOnLine(t *testing.T) {
 		t.Errorf("getVMInfo() Could not get registeredVMs")
 	}
 
-	if _, err := strconv.Atoi(h.memActiveMB); err != nil {
-		t.Errorf("getVMInfo() Non expected h.memActiveMB. Got=%s Expected int",
+	if h.memActiveMB == 0 {
+		t.Errorf("getVMInfo() Non expected h.memActiveMB. Got=%d Expected>0",
 			h.memActiveMB)
-	} else {
-		if h.memActiveMB == "0" {
-			t.Errorf("getVMInfo() Non expected h.memActiveMB. Got=%s Expected>0",
-				h.memActiveMB)
-		}
 	}
 
 	if err := h.getPortGroups(); err != nil {

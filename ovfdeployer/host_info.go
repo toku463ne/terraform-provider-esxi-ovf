@@ -42,7 +42,7 @@ func (h *host) getTotalMem() error {
 	if err != nil {
 		return err
 	}
-	h.memTotalMB = getSizeStr(removeBlanks(res[0]))
+	h.memTotalMB = convSizeStrToMB(removeBlanks(res[0]))
 	return nil
 }
 
@@ -114,7 +114,7 @@ func (h *host) getVMInfo() error {
 			memActiveMBi += im
 		}
 	}
-	h.memActiveMB = strconv.Itoa(memActiveMBi)
+	h.memActiveMB = memActiveMBi
 
 	return nil
 }
@@ -189,10 +189,6 @@ func getEsxiVersion(se *sshExpect) (string, error) {
 	return "", err
 }
 
-func calcVMMaxCnt(totalMemoryMB string) (int, error) {
-	m, err := strconv.Atoi(totalMemoryMB)
-	if err != nil {
-		return 0, errors.Wrapf(err, "Error converting. totalMemoryMB=%s", totalMemoryMB)
-	}
-	return int(m / memPerVMMB), nil
+func calcVMMaxCnt(totalMemoryMB int) (int, error) {
+	return int(totalMemoryMB / memPerVMMB), nil
 }

@@ -37,6 +37,11 @@ func resourcePool() *schema.Resource {
 				Required:    true,
 				DefaultFunc: func() (interface{}, error) { return getSchema("password") },
 			},
+			"ballooningMB": &schema.Schema{
+				Type:     schema.TypeInt,
+				Required: false,
+				Default:  0,
+			},
 			"log_level": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -61,8 +66,10 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	user := d.Get("user").(string)
 	password := d.Get("password").(string)
 	logLevel := d.Get("log_level").(string)
+	ballooning := d.Get("ballooning").(int)
 
-	pool, err := odp.NewPool(poolID, hostIPs, user, password, "", logLevel)
+	pool, err := odp.NewPool(poolID, hostIPs, user, password, ballooning,
+		"", logLevel)
 	if err != nil {
 		return err
 	}
@@ -88,8 +95,11 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	user := d.Get("user").(string)
 	password := d.Get("password").(string)
 	logLevel := d.Get("log_level").(string)
+	ballooning := d.Get("ballooning").(int)
 
-	if _, err := odp.ChangePool(poolID, user, password, hostIPs, "", logLevel); err != nil {
+	if _, err := odp.ChangePool(poolID, user, password,
+		hostIPs, ballooning,
+		"", logLevel); err != nil {
 		return err
 	}
 	return nil

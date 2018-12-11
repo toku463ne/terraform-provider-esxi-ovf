@@ -9,11 +9,12 @@ import (
 func TestPoolFuncs(t *testing.T) {
 
 	type args struct {
-		id      string
-		hostIPs []string
-		user    string
-		pass    string
-		testID  string
+		id           string
+		hostIPs      []string
+		user         string
+		pass         string
+		ballooningMB int
+		testID       string
 	}
 	tests := []struct {
 		name    string
@@ -23,11 +24,12 @@ func TestPoolFuncs(t *testing.T) {
 		// TODO: Add test cases.
 		{"TestPoolFuncs-normal",
 			args{
-				id:      "pooltest",
-				hostIPs: []string{"host1", "host2"},
-				user:    "",
-				pass:    "",
-				testID:  "pool1"}, false},
+				id:           "pooltest",
+				hostIPs:      []string{"host1", "host2"},
+				user:         "",
+				pass:         "",
+				ballooningMB: 0,
+				testID:       "pool1"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -36,7 +38,8 @@ func TestPoolFuncs(t *testing.T) {
 			}
 
 			got, err := NewPool(tt.args.id, tt.args.hostIPs,
-				tt.args.user, tt.args.pass, tt.args.testID, currentLogLevelStr)
+				tt.args.user, tt.args.pass, tt.args.ballooningMB,
+				tt.args.testID, currentLogLevelStr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPool() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -110,11 +113,12 @@ func TestPoolFuncs(t *testing.T) {
 func TestDeletePool(t *testing.T) {
 
 	type args struct {
-		id      string
-		hostIPs []string
-		user    string
-		pass    string
-		testID  string
+		id           string
+		hostIPs      []string
+		user         string
+		pass         string
+		ballooningMB int
+		testID       string
 	}
 	tests := []struct {
 		name    string
@@ -124,11 +128,12 @@ func TestDeletePool(t *testing.T) {
 		// TODO: Add test cases.
 		{"TestDeletePool-normal",
 			args{
-				id:      "pooltest",
-				hostIPs: []string{"host1", "host2"},
-				user:    "",
-				pass:    "",
-				testID:  "pool1"}, false},
+				id:           "pooltest",
+				hostIPs:      []string{"host1", "host2"},
+				user:         "",
+				pass:         "",
+				ballooningMB: 0,
+				testID:       "pool1"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -137,7 +142,8 @@ func TestDeletePool(t *testing.T) {
 			}
 
 			got, err := NewPool(tt.args.id, tt.args.hostIPs,
-				tt.args.user, tt.args.pass, tt.args.testID, currentLogLevelStr)
+				tt.args.user, tt.args.pass, tt.args.ballooningMB,
+				tt.args.testID, currentLogLevelStr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewPool() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -175,12 +181,13 @@ func TestDeletePool(t *testing.T) {
 
 func TestChangePool(t *testing.T) {
 	type args struct {
-		id       string
-		user     string
-		password string
-		hostIPs  []string
-		hostIPs2 []string
-		testID   string
+		id           string
+		user         string
+		password     string
+		ballooningMB int
+		hostIPs      []string
+		hostIPs2     []string
+		testID       string
 	}
 	tests := []struct {
 		name    string
@@ -190,22 +197,24 @@ func TestChangePool(t *testing.T) {
 		// TODO: Add test cases.
 		{"TestChangePool-normal1",
 			args{
-				id:       "changepooltest1",
-				user:     "",
-				password: "",
-				hostIPs:  []string{"host1", "host2"},
-				hostIPs2: []string{"host2"},
-				testID:   "pool1"},
+				id:           "changepooltest1",
+				user:         "",
+				password:     "",
+				ballooningMB: 0,
+				hostIPs:      []string{"host1", "host2"},
+				hostIPs2:     []string{"host2"},
+				testID:       "pool1"},
 			false,
 		},
 		{"TestChangePool-normal2",
 			args{
-				id:       "changepooltest2",
-				user:     "",
-				password: "",
-				hostIPs:  []string{"host1", "host2"},
-				hostIPs2: []string{"host1", "host3"},
-				testID:   "pool1"},
+				id:           "changepooltest2",
+				user:         "",
+				password:     "",
+				ballooningMB: 0,
+				hostIPs:      []string{"host1", "host2"},
+				hostIPs2:     []string{"host1", "host3"},
+				testID:       "pool1"},
 			false,
 		},
 	}
@@ -216,13 +225,15 @@ func TestChangePool(t *testing.T) {
 				t.Errorf("%+v", err)
 			}
 			_, err := NewPool(tt.args.id, tt.args.hostIPs,
-				tt.args.user, tt.args.password, tt.args.testID, currentLogLevelStr)
+				tt.args.user, tt.args.password, tt.args.ballooningMB,
+				tt.args.testID, currentLogLevelStr)
 			if err != nil {
 				t.Errorf("%+v", err)
 			}
 
 			got, err := ChangePool(tt.args.id, tt.args.user,
-				tt.args.password, tt.args.hostIPs2, tt.args.testID, currentLogLevelStr)
+				tt.args.password, tt.args.hostIPs2, tt.args.ballooningMB,
+				tt.args.testID, currentLogLevelStr)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ChangePool() error = %v, wantErr %v", err, tt.wantErr)
 				return

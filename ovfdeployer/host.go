@@ -15,11 +15,12 @@ type host struct {
 	pass          string
 	version       string
 	sshExp        sshExpect
-	memTotalMB    string
-	memActiveMB   string
+	memTotalMB    int
+	memActiveMB   int
 	cpuCoresCnt   int
 	vmMaxCnt      int
 	vmCnt         int
+	ballooningMB  int
 	portGroups    Table
 	dsAvailMB     Table
 	registeredVMs Table
@@ -40,13 +41,14 @@ func (h *host) sync2Db() error {
 	keytables["REGISTERED_VMS"] = h.registeredVMs
 	keytables["PORT_GROUPS"] = h.portGroups
 	keytables["BASIC"] = Table{
-		"memTotalMB":  h.memTotalMB,
-		"memActiveMB": h.memActiveMB,
-		"cpuCoresCnt": strconv.Itoa(h.cpuCoresCnt),
-		"user":        h.user,
-		"vmCnt":       strconv.Itoa(h.vmCnt),
-		"version":     h.version,
-		"testFile":    h.sshExp.testFile,
+		"memTotalMB":   strconv.Itoa(h.memTotalMB),
+		"memActiveMB":  strconv.Itoa(h.memActiveMB),
+		"ballooningMB": strconv.Itoa(h.ballooningMB),
+		"cpuCoresCnt":  strconv.Itoa(h.cpuCoresCnt),
+		"user":         h.user,
+		"vmCnt":        strconv.Itoa(h.vmCnt),
+		"version":      h.version,
+		"testFile":     h.sshExp.testFile,
 	}
 	for k, v := range keytables {
 		if err := dbw.sync2KeyTable(k, v); err != nil {
@@ -81,8 +83,19 @@ func loadHost(poolid, hostIP, password string) (*host, error) {
 	if err != nil {
 		return nil, err
 	}
-	h.memTotalMB = basict["memTotalMB"]
-	h.memActiveMB = basict["memActiveMB"]
+	h.memTotalMB, err = strconv.Atoi(basict["memTotalMB"])
+	if err != nil {
+		return nil, err
+	}
+	h.memActiveMB, err = strconv.Atoi(basict["memActiveMB"])
+	if err != nil {
+		return nil, err
+	}
+	h.ballooningMB, err = strconv.Atoi(basict["ballooningMB"])
+	if err != nil {
+		return nil, err
+	}
+	h.memTotalMB += h.ballooningMB
 	h.cpuCoresCnt, err = strconv.Atoi(basict["cpuCoresCnt"])
 	if err != nil {
 		return nil, err
@@ -127,12 +140,14 @@ func (h *host) registerVM(vmid, vmname string) error {
 	return nil
 }
 
-func newHost(poolid, hostIP, user, pass, testFile string) (*host, error) {
+func newHost(poolid, hostIP, user, pass string,
+	ballooningMB int, testFile string) (*host, error) {
 	h := new(host)
 	h.poolid = poolid
 	h.ip = hostIP
 	h.user = user
 	h.pass = pass
+	h.ballooningMB = ballooningMB
 	se, err := getSSHExpectConn(hostIP, user, pass, testFile)
 	if err != nil {
 		return nil, err

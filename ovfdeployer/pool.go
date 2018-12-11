@@ -23,7 +23,7 @@ func initPoolApp(id, logLevelStr string) error {
 
 // NewPool .. Create pool object and saves to database
 func NewPool(id string, hostIPs []string,
-	user, pass, testID, logLevel string) (*Pool, error) {
+	user, pass string, ballooningMB int, testID, logLevel string) (*Pool, error) {
 	if err := initPoolApp(id, logLevel); err != nil {
 		return nil, err
 	}
@@ -38,7 +38,8 @@ func NewPool(id string, hostIPs []string,
 	p.Hosts = make(hostgroup, len(p.hostIPs))
 	p.ID = id
 	for _, ip := range hostIPs {
-		if err := p.addHost(ip, user, pass, getTestFile(testID, ip)); err != nil {
+		if err := p.addHost(ip, user, pass, ballooningMB,
+			getTestFile(testID, ip)); err != nil {
 			return nil, err
 		}
 	}
@@ -110,12 +111,13 @@ func DeletePool(id, password, logLevel string) error {
 }
 
 // ChangePool .. Detect change of host ips and change database. Ignore changes at user, password, logLevel
-func ChangePool(id, user, password string, hostIPs []string,
+func ChangePool(id, user, password string, hostIPs []string, ballooningMB int,
 	testID, logLevel string) (*Pool, error) {
 	if err := initPoolApp(id, logLevel); err != nil {
 		return nil, err
 	}
-	logDebug("ChangePool(%s, %s, ***, %s, %v, %s)", id, user, hostIPs, testID)
+	logDebug("ChangePool(%s, %s, ***, %s, %v, %d, %s)", id, user,
+		hostIPs, ballooningMB, testID)
 
 	p, err := LoadPool(id, password, "")
 	if err != nil {
@@ -129,7 +131,8 @@ func ChangePool(id, user, password string, hostIPs []string,
 	}
 	addedIPs := getRemovedElesFromSlice(hostIPs, p.hostIPs)
 	for _, ip := range addedIPs {
-		if err := p.addHost(ip, user, password, getTestFile(testID, ip)); err != nil {
+		if err := p.addHost(ip, user, password, ballooningMB,
+			getTestFile(testID, ip)); err != nil {
 			return nil, err
 		}
 	}
@@ -161,11 +164,12 @@ func (p *Pool) hasHost(ip string) bool {
 	return hasStr(p.hostIPs, ip)
 }
 
-func (p *Pool) addHost(ip, user, pass, testFile string) error {
+func (p *Pool) addHost(ip, user, pass string,
+	ballooningMB int, testFile string) error {
 	if p.hasHost(ip) {
 		return errors.Errorf("addHost(): Host with IP=%s already exists in this pool", ip)
 	}
-	h, err := newHost(p.ID, ip, user, pass, testFile)
+	h, err := newHost(p.ID, ip, user, pass, ballooningMB, testFile)
 	if err != nil {
 		return err
 	}
@@ -282,13 +286,13 @@ func (p *Pool) getMostVacantHost(memSize, dsSize, cpuCores int, portgroup string
 			continue
 		}
 		vmAvailableCnt := h.vmMaxCnt - activeVMMemSize
-		vmMemSize, err := calcVMMaxCnt(strconv.Itoa(memSize))
+		vmMemSize, err := calcVMMaxCnt(memSize)
 		if err != nil {
 			return "", -1, err
 		}
 		if vmAvailableCnt <= vmMemSize {
-			memTotal, _ := strconv.Atoi(h.memTotalMB)
-			memActive, _ := strconv.Atoi(h.memActiveMB)
+			memTotal := h.memTotalMB
+			memActive := h.memActiveMB
 			logDebug("Not enough memory in host=%s memAvailable=%d, need=%d",
 				ip, memTotal-memActive, memSize)
 			continue
@@ -395,12 +399,8 @@ func (p *Pool) appendVMResource(hostIP string,
 	}
 
 	h.dsAvailMB[ds] = strconv.Itoa(dsAvailSize - dsSize)
-	memActiveMBi, err := strconv.Atoi(h.memActiveMB)
-	if err != nil {
-		return "", "", err
-	}
 	h.vmCnt += vmCntToAdd
-	h.memActiveMB = strconv.Itoa(memSize + memActiveMBi)
+	h.memActiveMB = memSize + h.memActiveMB
 	return hostIP, ds, nil
 }
 
