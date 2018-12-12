@@ -1,33 +1,30 @@
 # terraform-provider-esxi-ovf
----
-Under construction
+Under construction  
+
 
 ## Overview
----
 Very simple terraform provider to deploy vmware esxi ovf files to ESXi hosts. 
 Do not require vCenter.  
-Tested with ESXi5 and ESXi6
+Tested with ESXi5 and ESXi6  
 
 
 ## Prerequisites
----
 Need ovftools and golang installed  
 
+
 ## Installation
----
-git clone https://github.com/toku463ne/terraform-provider-esxi-ovf.git
-cd terraform-provider-esxi-ovf
-./install.sh
+    git clone https://github.com/toku463ne/terraform-provider-esxi-ovf.git
+    cd terraform-provider-esxi-ovf
+    ./install.sh
 
 
 ## Known Limitations
----
 Need to execute terraform commands from where you can login by ssh to ESXi hosts.
 Currently only can login by user/password authentication.
 
+
 ## Example
----
-sample.tf
+#### sample.tf  
     variable "hostip1" {}
     variable "hostip2" {}
     variable "password" {}
