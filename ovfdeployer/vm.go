@@ -59,7 +59,7 @@ func NewVM(
 	vm.portgroups = portgroups
 	vm.guestinfos = guestinfos
 	p, err := LoadPool(poolid, password, "")
-
+	
 	logDebug(`NewVM(%s, %s, ***, %s, %d, %d, %s, %s, %v, %v)`,
 		poolid,
 		name,

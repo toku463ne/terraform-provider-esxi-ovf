@@ -6,7 +6,7 @@ set -x
 VMTOOLSD="/usr/bin/vmtoolsd"
 
 function getinfo() {
-    $VMTOOLSD --cmd "info-get net.guestinfo.$1" 2>/dev/null
+    $VMTOOLSD --cmd "info-get guestinfo.net.$1" 2>/dev/null
 }
 
 function resolve_distro() {
@@ -56,7 +56,7 @@ fi
 
 #### main ###
 
-if [ !-x $VMTOOLSD ]
+if [ ! -x $VMTOOLSD ]
 then
     echo "$VMTOOLSD does not exist or not executable"
     exit 1 
@@ -64,7 +64,6 @@ fi
 
 dev=`getinfo dev`
 ipaddr=`getinfo address`
-network=`getinfo network`
 netmask=`getinfo netmask`
 gateway=`getinfo gateway`
 set +e
@@ -76,8 +75,22 @@ distro=`resolve_distro`
 if [ "$distro" == "debian" ]
 then
 netfile=/etc/network/interfaces
+set +e
+grep $ipaddr $netfile
+if [ "$?" -eq 0 ]
+then
+	exit 0
+fi
+set -e
+
+d=`date`
 mv $netfile $netfile.bk
 cat > $netfile << EOF
+# Created by /esxi-ovf-net.sh
+# $d
+
+source /etc/network/interfaces.d/*
+
 auto lo
 iface lo inet loopback
 
@@ -85,12 +98,15 @@ auto $dev
 iface $dev inet static
     address $ipaddr
     netmask $netmask
-    network $network
     gateway $gateway
-    dns-nameservers $nameservers
 EOF
 set +e
-service networking restart || reboot
+if [ "$nameservers" != "" ]
+then
+	echo "    dns-nameservers $nameservers" >> $netfile
+fi
+
+ifdown $dev; ip addr flush dev $dev; ifup $dev
 set -e
 fi
 
@@ -98,10 +114,17 @@ if [ "$distro" == "redhat" ]
 then
 set +e
 ifdown $dev
-set -e
 netfile=/etc/sysconfig/network-scripts/ifcfg-$dev
+grep $ipaddr $netfile
+if [ "$?" -eq 0 ]
+then
+	exit 0
+fi
+set -e
 mv $netfile $netfile.bk
 cat > $netfile << EOF
+# Created by /esxi-ovf-net.sh
+# $d
 DEVICE="$dev"
 BOOTPROTO="static"
 GATEWAY="$gateway"
@@ -110,4 +133,8 @@ NETMASK="$netmask"
 ONBOOT="yes"
 EOF
 ifup $dev
+if [ "$nameservers" != "" ]
+then
+	echo "    nameservers $nameservers" > /etc/resolv.conf
+fi
 fi
